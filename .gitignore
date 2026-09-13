@@ -49,3 +49,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local Replit workspace configuration may contain credentials
+.replit
