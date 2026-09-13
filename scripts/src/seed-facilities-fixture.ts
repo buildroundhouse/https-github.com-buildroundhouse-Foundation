@@ -80,7 +80,6 @@ interface Fixture {
   emailEnv: string;
   passwordEnv: string;
   defaultEmail: string;
-  defaultPassword: string;
   displayName: string;
   username: string;
   /** When set, this user owns a primary outward account of this kind. */
@@ -97,7 +96,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_FACILITIES_ADMIN_EMAIL",
     passwordEnv: "E2E_FACILITIES_ADMIN_PASSWORD",
     defaultEmail: "e2e-facilities-admin@roundhouse-e2e.test",
-    defaultPassword: "FacilitiesE2E!Admin-2026",
     displayName: "Facilities E2E Admin",
     username: "facilities_e2e_admin",
     modeKind: "facilities",
@@ -116,7 +114,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_FACILITIES_TEAMMATE_EMAIL",
     passwordEnv: "E2E_FACILITIES_TEAMMATE_PASSWORD",
     defaultEmail: "e2e-facilities-teammate@roundhouse-e2e.test",
-    defaultPassword: "FacilitiesE2E!Teammate-2026",
     displayName: "Facilities E2E Teammate",
     username: "facilities_e2e_teammate",
     modeKind: null,
@@ -128,7 +125,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_FACILITIES_PENDING_EMAIL",
     passwordEnv: "E2E_FACILITIES_PENDING_PASSWORD",
     defaultEmail: "e2e-facilities-pending@roundhouse-e2e.test",
-    defaultPassword: "FacilitiesE2E!Pending-2026",
     displayName: "Facilities E2E Pending",
     username: "facilities_e2e_pending",
     modeKind: null,
@@ -140,7 +136,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_FACILITIES_FRIEND_EMAIL",
     passwordEnv: "E2E_FACILITIES_FRIEND_PASSWORD",
     defaultEmail: "e2e-facilities-friend@roundhouse-e2e.test",
-    defaultPassword: "FacilitiesE2E!Friend-2026",
     displayName: "Facilities E2E Friend",
     username: "facilities_e2e_friend",
     modeKind: "collab",
@@ -451,8 +446,14 @@ interface SeededFixture extends Fixture {
 async function main(): Promise<void> {
   const seeded: SeededFixture[] = [];
   for (const f of FIXTURES) {
-    const email = process.env[f.emailEnv]?.trim() || f.defaultEmail;
-    const password = process.env[f.passwordEnv]?.trim() || f.defaultPassword;
+    const email = process.env[f.emailEnv]?.trim();
+    if (!email) {
+      throw new Error(`${f.emailEnv} must be set; fixture passwords are not stored in source control.`);
+    }
+    const password = process.env[f.passwordEnv]?.trim();
+    if (!password) {
+      throw new Error(`${f.passwordEnv} must be set; fixture passwords are not stored in source control.`);
+    }
     process.stdout.write(`Ensuring Firebase user ${f.key} <${email}>... `);
     const uid = await ensureFirebaseUser(email, password);
     process.stdout.write(`uid=${uid}\n`);
@@ -528,7 +529,6 @@ async function main(): Promise<void> {
   );
   for (const s of seeded) {
     console.log(`  ${s.emailEnv}=${s.email}`);
-    console.log(`  ${s.passwordEnv}=${s.password}`);
   }
   console.log(
     "\nPassword rotation: this script does not change Firebase passwords. To rotate, reset the password from the Firebase console (or delete the user there), then re-run the script with the new value exported as the corresponding *_PASSWORD env var — signUp will pick up the new password on the next run.",
