@@ -95,7 +95,6 @@ interface Fixture {
   emailEnv: string;
   passwordEnv: string;
   defaultEmail: string;
-  defaultPassword: string;
   displayName: string;
   username: string;
   /**
@@ -122,7 +121,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_COMPANY_ADMIN_EMAIL",
     passwordEnv: "E2E_COMPANY_ADMIN_PASSWORD",
     defaultEmail: "e2e-company-admin@roundhouse-e2e.test",
-    defaultPassword: "NudgeE2E!Admin-2026",
     displayName: "Nudge E2E Admin",
     username: "nudge_e2e_admin",
     modeKind: "trade_pro",
@@ -142,7 +140,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_COMPANY_MEMBER_EMAIL",
     passwordEnv: "E2E_COMPANY_MEMBER_PASSWORD",
     defaultEmail: "e2e-company-member@roundhouse-e2e.test",
-    defaultPassword: "NudgeE2E!Member-2026",
     displayName: "Nudge E2E Member",
     username: "nudge_e2e_member",
     modeKind: null,
@@ -154,7 +151,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_COMPANY_ADMIN_2_EMAIL",
     passwordEnv: "E2E_COMPANY_ADMIN_2_PASSWORD",
     defaultEmail: "e2e-company-admin-2@roundhouse-e2e.test",
-    defaultPassword: "NudgeE2E!Admin2-2026",
     displayName: "Nudge E2E Admin 2",
     username: "nudge_e2e_admin_2",
     modeKind: null,
@@ -166,7 +162,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_COMPANY_PENDING_EMAIL",
     passwordEnv: "E2E_COMPANY_PENDING_PASSWORD",
     defaultEmail: "e2e-company-pending@roundhouse-e2e.test",
-    defaultPassword: "NudgeE2E!Pending-2026",
     displayName: "Nudge E2E Pending",
     username: "nudge_e2e_pending",
     modeKind: null,
@@ -178,7 +173,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_COMPANY_CLIENT_EMAIL",
     passwordEnv: "E2E_COMPANY_CLIENT_PASSWORD",
     defaultEmail: "e2e-company-client@roundhouse-e2e.test",
-    defaultPassword: "NudgeE2E!Client-2026",
     displayName: "Nudge E2E Client",
     username: "nudge_e2e_client",
     modeKind: "home",
@@ -190,7 +184,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_COMPANY_SERVICE_EMAIL",
     passwordEnv: "E2E_COMPANY_SERVICE_PASSWORD",
     defaultEmail: "e2e-company-service@roundhouse-e2e.test",
-    defaultPassword: "NudgeE2E!Service-2026",
     displayName: "Nudge E2E Service",
     username: "nudge_e2e_service",
     modeKind: "trade_pro",
@@ -206,7 +199,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_COMPANY_FRIEND_EMAIL",
     passwordEnv: "E2E_COMPANY_FRIEND_PASSWORD",
     defaultEmail: "e2e-company-friend@roundhouse-e2e.test",
-    defaultPassword: "NudgeE2E!Friend-2026",
     displayName: "Nudge E2E Friend",
     username: "nudge_e2e_friend",
     modeKind: "collab",
@@ -585,8 +577,14 @@ interface SeededFixture extends Fixture {
 async function main(): Promise<void> {
   const seeded: SeededFixture[] = [];
   for (const f of FIXTURES) {
-    const email = process.env[f.emailEnv]?.trim() || f.defaultEmail;
-    const password = process.env[f.passwordEnv]?.trim() || f.defaultPassword;
+    const email = process.env[f.emailEnv]?.trim();
+    if (!email) {
+      throw new Error(`${f.emailEnv} must be set; fixture passwords are not stored in source control.`);
+    }
+    const password = process.env[f.passwordEnv]?.trim();
+    if (!password) {
+      throw new Error(`${f.passwordEnv} must be set; fixture passwords are not stored in source control.`);
+    }
     process.stdout.write(`Ensuring Firebase user ${f.key} <${email}>... `);
     const uid = await ensureFirebaseUser(email, password);
     process.stdout.write(`uid=${uid}\n`);
@@ -695,7 +693,6 @@ async function main(): Promise<void> {
   console.log("\nSeed complete. Copy the following into the project's shared env vars / secrets so test runners can sign in (this script does NOT write them itself):\n");
   for (const s of seeded) {
     console.log(`  ${s.emailEnv}=${s.email}`);
-    console.log(`  ${s.passwordEnv}=${s.password}`);
   }
   console.log(
     "\nPassword rotation: this script does not change Firebase passwords. To rotate, reset the password from the Firebase console (or delete the user there), then re-run the script with the new value exported as the corresponding *_PASSWORD env var — signUp will pick up the new password on the next run.",
