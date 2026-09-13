@@ -33,7 +33,6 @@ interface Fixture {
   emailEnv: string;
   passwordEnv: string;
   defaultEmail: string;
-  defaultPassword: string;
   displayName: string;
   username: string;
 }
@@ -42,7 +41,6 @@ const FIXTURE: Fixture = {
   emailEnv: "E2E_ADMIN_EMAIL",
   passwordEnv: "E2E_ADMIN_PASSWORD",
   defaultEmail: "e2e-admin@roundhouse-e2e.test",
-  defaultPassword: "RhAdminE2E!Wardrobe-2026",
   displayName: "RH E2E Admin",
   username: "rh_e2e_admin",
 };
@@ -125,8 +123,14 @@ async function upsertAdminUserRow(opts: {
 }
 
 async function main(): Promise<void> {
-  const email = process.env[FIXTURE.emailEnv]?.trim() || FIXTURE.defaultEmail;
-  const password = process.env[FIXTURE.passwordEnv]?.trim() || FIXTURE.defaultPassword;
+  const email = process.env[FIXTURE.emailEnv]?.trim();
+  if (!email) {
+    throw new Error(`${FIXTURE.emailEnv} must be set; fixture passwords are not stored in source control.`);
+  }
+  const password = process.env[FIXTURE.passwordEnv]?.trim();
+  if (!password) {
+    throw new Error(`${FIXTURE.passwordEnv} must be set; fixture passwords are not stored in source control.`);
+  }
   process.stdout.write(`Ensuring Firebase user ADMIN <${email}>... `);
   const uid = await ensureFirebaseUser(email, password);
   process.stdout.write(`uid=${uid}\n`);
@@ -141,7 +145,6 @@ async function main(): Promise<void> {
     "\nSeed complete. Copy the following into the project's shared env vars / secrets so test runners can sign in (this script does NOT write them itself):\n",
   );
   console.log(`  ${FIXTURE.emailEnv}=${email}`);
-  console.log(`  ${FIXTURE.passwordEnv}=${password}`);
   console.log(
     "\nPassword rotation: this script does not change Firebase passwords. To rotate, reset the password from the Firebase console (or delete the user there), then re-run the script with the new value exported as the corresponding *_PASSWORD env var — signUp will pick up the new password on the next run.",
   );
