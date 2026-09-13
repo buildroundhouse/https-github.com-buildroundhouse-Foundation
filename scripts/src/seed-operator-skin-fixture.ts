@@ -70,7 +70,6 @@ interface SkinSpec {
 const OWNER_EMAIL_ENV = "E2E_OPERATOR_SKIN_OWNER_EMAIL";
 const OWNER_PASSWORD_ENV = "E2E_OPERATOR_SKIN_OWNER_PASSWORD";
 const OWNER_DEFAULT_EMAIL = "e2e-operator-skin-owner@roundhouse-e2e.test";
-const OWNER_DEFAULT_PASSWORD = "OperatorSkinE2E!Owner-2026";
 const OWNER_DISPLAY_NAME = "Operator E2E Owner";
 const OWNER_USERNAME = "operator_e2e_owner";
 
@@ -273,8 +272,14 @@ async function setActivePointers(opts: {
 }
 
 async function main(): Promise<void> {
-  const email = process.env[OWNER_EMAIL_ENV]?.trim() || OWNER_DEFAULT_EMAIL;
-  const password = process.env[OWNER_PASSWORD_ENV]?.trim() || OWNER_DEFAULT_PASSWORD;
+  const email = process.env[OWNER_EMAIL_ENV]?.trim();
+  if (!email) {
+    throw new Error(`${OWNER_EMAIL_ENV} must be set; fixture passwords are not stored in source control.`);
+  }
+  const password = process.env[OWNER_PASSWORD_ENV]?.trim();
+  if (!password) {
+    throw new Error(`${OWNER_PASSWORD_ENV} must be set; fixture passwords are not stored in source control.`);
+  }
   process.stdout.write(`Ensuring Firebase user OPERATOR_SKIN_OWNER <${email}>... `);
   const uid = await ensureFirebaseUser(email, password);
   process.stdout.write(`uid=${uid}\n`);
@@ -320,7 +325,6 @@ async function main(): Promise<void> {
     "\nSeed complete. Copy the following into the project's shared env vars / secrets so test runners can sign in (this script does NOT write them itself):\n",
   );
   console.log(`  ${OWNER_EMAIL_ENV}=${email}`);
-  console.log(`  ${OWNER_PASSWORD_ENV}=${password}`);
   console.log(
     "\nVisitor side: the test plan reuses the standard pre-onboarded fixture (E2E_FIREBASE_EMAIL / E2E_FIREBASE_PASSWORD). No additional seed is required there — run `pnpm --filter @workspace/scripts run seed:standard-fixture` if those credentials don't exist yet.",
   );
