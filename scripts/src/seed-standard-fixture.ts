@@ -69,7 +69,6 @@ const FIXTURE = {
   emailEnv: "E2E_FIREBASE_EMAIL",
   passwordEnv: "E2E_FIREBASE_PASSWORD",
   defaultEmail: "e2e-standard@roundhouse-e2e.test",
-  defaultPassword: "StandardE2E!Fixture-2026",
   displayName: "Standard E2E Fixture",
   username: "standard_e2e_fixture",
 };
@@ -79,7 +78,6 @@ interface CounterpartFixture {
   emailEnv: string;
   passwordEnv: string;
   defaultEmail: string;
-  defaultPassword: string;
   displayName: string;
   username: string;
   modeKind: UserModeKind;
@@ -117,7 +115,6 @@ const COUNTERPARTS: CounterpartFixture[] = [
     emailEnv: "E2E_FIREBASE_TRADE_PRO_EMAIL",
     passwordEnv: "E2E_FIREBASE_TRADE_PRO_PASSWORD",
     defaultEmail: "e2e-standard-trade-pro@roundhouse-e2e.test",
-    defaultPassword: "StandardE2E!TradePro-2026",
     displayName: "Standard E2E Trade Pro",
     username: "standard_e2e_trade_pro",
     modeKind: "trade_pro",
@@ -132,7 +129,6 @@ const COUNTERPARTS: CounterpartFixture[] = [
     emailEnv: "E2E_FIREBASE_FRIEND_EMAIL",
     passwordEnv: "E2E_FIREBASE_FRIEND_PASSWORD",
     defaultEmail: "e2e-standard-friend@roundhouse-e2e.test",
-    defaultPassword: "StandardE2E!Friend-2026",
     displayName: "Standard E2E Friend",
     username: "standard_e2e_friend",
     modeKind: "collab",
@@ -148,7 +144,6 @@ const COUNTERPARTS: CounterpartFixture[] = [
     emailEnv: "E2E_FIREBASE_RETIRED_PRO_EMAIL",
     passwordEnv: "E2E_FIREBASE_RETIRED_PRO_PASSWORD",
     defaultEmail: "e2e-standard-retired-pro@roundhouse-e2e.test",
-    defaultPassword: "StandardE2E!Retired-2026",
     displayName: "Standard E2E Retired Pro",
     username: "standard_e2e_retired_pro",
     modeKind: "trade_pro",
@@ -628,8 +623,14 @@ interface SeededCounterpart extends CounterpartFixture {
 }
 
 async function main(): Promise<void> {
-  const email = process.env[FIXTURE.emailEnv]?.trim() || FIXTURE.defaultEmail;
-  const password = process.env[FIXTURE.passwordEnv]?.trim() || FIXTURE.defaultPassword;
+  const email = process.env[FIXTURE.emailEnv]?.trim();
+  if (!email) {
+    throw new Error(`${FIXTURE.emailEnv} must be set; fixture passwords are not stored in source control.`);
+  }
+  const password = process.env[FIXTURE.passwordEnv]?.trim();
+  if (!password) {
+    throw new Error(`${FIXTURE.passwordEnv} must be set; fixture passwords are not stored in source control.`);
+  }
   process.stdout.write(`Ensuring Firebase user <${email}>... `);
   const uid = await ensureFirebaseUser(email, password);
   process.stdout.write(`uid=${uid}\n`);
@@ -662,8 +663,14 @@ async function main(): Promise<void> {
   // home OA → each counterpart's primary OA.
   const seededCounterparts: SeededCounterpart[] = [];
   for (const cp of COUNTERPARTS) {
-    const cpEmail = process.env[cp.emailEnv]?.trim() || cp.defaultEmail;
-    const cpPassword = process.env[cp.passwordEnv]?.trim() || cp.defaultPassword;
+    const cpEmail = process.env[cp.emailEnv]?.trim();
+    if (!cpEmail) {
+      throw new Error(`${cp.emailEnv} must be set; fixture passwords are not stored in source control.`);
+    }
+    const cpPassword = process.env[cp.passwordEnv]?.trim();
+    if (!cpPassword) {
+      throw new Error(`${cp.passwordEnv} must be set; fixture passwords are not stored in source control.`);
+    }
     process.stdout.write(`Ensuring Firebase user ${cp.key} <${cpEmail}>... `);
     const cpUid = await ensureFirebaseUser(cpEmail, cpPassword);
     process.stdout.write(`uid=${cpUid}\n`);
@@ -719,10 +726,8 @@ async function main(): Promise<void> {
     "\nSeed complete. Copy the following into the project's shared env vars / secrets so test runners can sign in (this script does NOT write them itself):\n",
   );
   console.log(`  ${FIXTURE.emailEnv}=${email}`);
-  console.log(`  ${FIXTURE.passwordEnv}=${password}`);
   for (const cp of seededCounterparts) {
     console.log(`  ${cp.emailEnv}=${cp.email}`);
-    console.log(`  ${cp.passwordEnv}=${cp.password}`);
   }
   console.log(
     "\nPassword rotation: this script does not change Firebase passwords. To rotate, reset the password from the Firebase console (or delete the user there), then re-run the script with the new value exported as the corresponding *_PASSWORD env var — signUp will pick up the new password on the next run.",
