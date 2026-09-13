@@ -97,7 +97,6 @@ interface FixtureSpec {
   emailEnv: string;
   passwordEnv: string;
   defaultEmail: string;
-  defaultPassword: string;
   displayName: string;
   username: string;
 }
@@ -106,7 +105,6 @@ const PRO: FixtureSpec = {
   emailEnv: "E2E_PRO_TAG_PRO_EMAIL",
   passwordEnv: "E2E_PRO_TAG_PRO_PASSWORD",
   defaultEmail: "e2e-pro-tag-pro@roundhouse-e2e.test",
-  defaultPassword: "ProTagE2E!Pro-2026",
   displayName: "Pro Tag E2E Pro",
   username: "pro_tag_e2e_pro",
 };
@@ -115,7 +113,6 @@ const CLIENT: FixtureSpec = {
   emailEnv: "E2E_PRO_TAG_CLIENT_EMAIL",
   passwordEnv: "E2E_PRO_TAG_CLIENT_PASSWORD",
   defaultEmail: "e2e-pro-tag-client@roundhouse-e2e.test",
-  defaultPassword: "ProTagE2E!Client-2026",
   displayName: "Pro Tag E2E Client",
   username: "pro_tag_e2e_client",
 };
@@ -135,8 +132,14 @@ interface SeededUser {
 }
 
 async function seedFirebase(spec: FixtureSpec): Promise<SeededUser> {
-  const email = process.env[spec.emailEnv]?.trim() || spec.defaultEmail;
-  const password = process.env[spec.passwordEnv]?.trim() || spec.defaultPassword;
+  const email = process.env[spec.emailEnv]?.trim();
+  if (!email) {
+    throw new Error(`${spec.emailEnv} must be set; fixture passwords are not stored in source control.`);
+  }
+  const password = process.env[spec.passwordEnv]?.trim();
+  if (!password) {
+    throw new Error(`${spec.passwordEnv} must be set; fixture passwords are not stored in source control.`);
+  }
   process.stdout.write(`Ensuring Firebase user <${email}>... `);
   const uid = await ensureFirebaseUser(email, password);
   process.stdout.write(`uid=${uid}\n`);
@@ -359,9 +362,7 @@ async function main(): Promise<void> {
     "\nIf this is a first run, copy the following into project secrets:\n",
   );
   console.log(`  ${PRO.emailEnv}=${pro.email}`);
-  console.log(`  ${PRO.passwordEnv}=${pro.password}`);
   console.log(`  ${CLIENT.emailEnv}=${client.email}`);
-  console.log(`  ${CLIENT.passwordEnv}=${client.password}`);
 }
 
 main()
