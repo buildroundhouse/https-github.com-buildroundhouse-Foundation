@@ -84,7 +84,6 @@ interface Fixture {
   emailEnv: string;
   passwordEnv: string;
   defaultEmail: string;
-  defaultPassword: string;
   displayName: string;
   username: string;
   modeKind: UserModeKind | null;
@@ -121,7 +120,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_PICKED_SKIN_OWNER_EMAIL",
     passwordEnv: "E2E_PICKED_SKIN_OWNER_PASSWORD",
     defaultEmail: "e2e-picked-skin-owner@roundhouse-e2e.test",
-    defaultPassword: "PickedSkinE2E!Owner-2026",
     displayName: "Picked Skin Owner E2E",
     username: "picked_skin_owner_e2e",
     modeKind: "trade_pro",
@@ -132,7 +130,6 @@ const FIXTURES: Fixture[] = [
     emailEnv: "E2E_PICKED_SKIN_VISITOR_EMAIL",
     passwordEnv: "E2E_PICKED_SKIN_VISITOR_PASSWORD",
     defaultEmail: "e2e-picked-skin-visitor@roundhouse-e2e.test",
-    defaultPassword: "PickedSkinE2E!Visitor-2026",
     displayName: "Picked Skin Visitor E2E",
     username: "picked_skin_visitor_e2e",
     modeKind: "home",
@@ -335,8 +332,14 @@ interface SeededFixture extends Fixture {
 async function main(): Promise<void> {
   const seeded: SeededFixture[] = [];
   for (const f of FIXTURES) {
-    const email = process.env[f.emailEnv]?.trim() || f.defaultEmail;
-    const password = process.env[f.passwordEnv]?.trim() || f.defaultPassword;
+    const email = process.env[f.emailEnv]?.trim();
+    if (!email) {
+      throw new Error(`${f.emailEnv} must be set; fixture passwords are not stored in source control.`);
+    }
+    const password = process.env[f.passwordEnv]?.trim();
+    if (!password) {
+      throw new Error(`${f.passwordEnv} must be set; fixture passwords are not stored in source control.`);
+    }
     process.stdout.write(`Ensuring Firebase user ${f.key} <${email}>... `);
     const uid = await ensureFirebaseUser(email, password);
     process.stdout.write(`uid=${uid}\n`);
@@ -410,7 +413,6 @@ async function main(): Promise<void> {
   );
   for (const s of seeded) {
     console.log(`  ${s.emailEnv}=${s.email}`);
-    console.log(`  ${s.passwordEnv}=${s.password}`);
   }
   console.log(
     "\nPassword rotation: this script does not change Firebase passwords. To rotate, reset the password from the Firebase console (or delete the user there), then re-run the script with the new value exported as the corresponding *_PASSWORD env var.",
